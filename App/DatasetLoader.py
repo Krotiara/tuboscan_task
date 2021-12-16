@@ -1,23 +1,18 @@
-import random
-import numpy as np
 import pandas as pd
+import random
 
 
 class DatasetLoader:
 
-    def __init__(self):
-        pass
-
-    def load_dataset(self, path_to_csv):
-        """Загрузка датасета из файла CSV в формате тестового задания.
-         Функция Возвращает 2 массива, соответствующие входным данным
-         колонок A-C и предсказательными значениями колонок D-F соответственно.
-         """
+    @staticmethod
+    def load_dataset(path_to_csv):
+        """Загрузить датасет в тестовом формате,
+         все колонки которого имеют численные значения"""
         dataframe = pd.read_csv(path_to_csv, delimiter=',')
-        float_data = dataframe.to_numpy().astype(np.float)
-        x, y = np.hsplit(float_data, [8])
-        return x, y
+        float_dataframe = dataframe.astype(float)
+        return float_dataframe
 
+    @staticmethod
     def random_vary_input_data(self, input_data, vary_limit):
         """Случайно проварьировать входные данные input_data в пределах
         vary_limit процентов от их значений. Функция возвращает
