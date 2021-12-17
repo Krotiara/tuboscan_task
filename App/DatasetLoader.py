@@ -5,7 +5,7 @@ import random
 class DatasetLoader:
 
     @staticmethod
-    def load_dataset(path_to_csv):
+    def load_dataset(path_to_csv: str):
         """Загрузить датасет в тестовом формате,
          все колонки которого имеют численные значения"""
         dataframe = pd.read_csv(path_to_csv, delimiter=',')
@@ -13,7 +13,7 @@ class DatasetLoader:
         return float_dataframe
 
     @staticmethod
-    def random_vary_input_data(self, input_data, vary_limit):
+    def random_vary_input_data(self, input_data, vary_limit: int):
         """Случайно проварьировать входные данные input_data в пределах
         vary_limit процентов от их значений. Функция возвращает
          скорректированный набор input_data

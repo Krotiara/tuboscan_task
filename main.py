@@ -8,7 +8,7 @@ if __name__ == '__main__':
     preprocessor = DataPreProcessor()
     dataframe = loader.load_dataset('Files/dataset.csv')
     preprocessedData = preprocessor.preprocess_data(dataframe)
-    analyzer.analyse_data(preprocessedData.dataframe)
+    analyzer.analyse_data(preprocessedData)
 
 
 

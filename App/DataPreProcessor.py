@@ -1,5 +1,6 @@
 import numpy as np
 from App.PreProcessedData import PreProcessedData
+from scipy import  stats
 
 
 class DataPreProcessor:
@@ -13,9 +14,9 @@ class DataPreProcessor:
         :return: Объект класса PreProcessedData
         """
         missing_rows_count = self._process_missing_data_by_delete(dataframe)
+        dataframe = self._remove_outliers_iqr(dataframe)
         dataframe = self._normalize_data(dataframe)
-        train_X, train_Y = self._convert_dataframe_to_sets(dataframe)
-        return PreProcessedData(dataframe,missing_rows_count, train_X, train_Y)
+        return PreProcessedData(dataframe, missing_rows_count)
 
     @staticmethod
     def _process_missing_data_by_delete(dataframe):
@@ -37,13 +38,33 @@ class DataPreProcessor:
         return dataframe / dataframe.max()
 
     @staticmethod
-    def _convert_dataframe_to_sets(dataframe):
-        """
-        Преобразовать датасет в набор тренируемых и контрольных значений в
-        соответсвии с постановкой задания.
-        :param dataframe: pandas dataframe
-        :return: train_x and train_y sets
-        """
-        float_data = dataframe.to_numpy()
-        x, y = np.hsplit(float_data, [8])
-        return x, y
+    def _remove_outliers_z_score(dataframe):
+        z_scores = stats.zscore(dataframe)
+        print(dataframe.shape)
+
+        abs_z_scores = np.abs(z_scores)
+        # mask to remove outliers (outlier ~ z score >= 3)
+        mask = (abs_z_scores < 3).all(axis=1)
+        dataframe_without_outliers = dataframe[mask]
+        print(dataframe_without_outliers.shape)
+        return  dataframe_without_outliers
+
+    @staticmethod
+    def _remove_outliers_iqr(dataframe):
+        print(dataframe.shape)
+        Q1 = dataframe.quantile(0.25)
+        Q3 = dataframe.quantile(0.75)
+        IQR = Q3-Q1
+        lower_range = Q1 - (1.5 * IQR)
+        upper_range = Q3 + (1.5 * IQR)
+        mask = ((dataframe < lower_range) | (dataframe > upper_range)).any(axis=1)
+        dataframe_without_outliers = dataframe[~mask]
+        print(dataframe_without_outliers.shape)
+        return dataframe_without_outliers
+
+
+
+
+
+
+
