@@ -1,25 +1,19 @@
 import matplotlib.pyplot as plt
-from scipy.stats import norm, expon, poisson, binom, uniform
 import seaborn as sb
 import pandas
 from pandas.plotting import scatter_matrix
-import numpy as np
+
 
 class DataAnalyzer:
 
     def __init__(self):
         pass
-
-    def analyse_data(self, data):
-        pandas.set_option('display.max_columns', None)
-        # print(data.dataframe.describe())
-       # self.box_plot(data)
-        self.plot_scatter_matrix(data)
-        #self.plot_params_histograms(data)
-        self.plot_correlation_matrix(data.correlation_matrix)
+    
+    def describe_data(self, data):
+        return data.describe
 
     def plot_params_histograms(self, data):
-        data.dataframe.hist(bins = 30)
+        data.hist(bins = 30)
         plt.show()
 
     def plot_compare_hist_and_distribution(self, paramData):
@@ -42,29 +36,35 @@ class DataAnalyzer:
         plt.show()
 
     def box_plot(self, data):
-        plot = data.dataframe.boxplot()
+        plot = data.boxplot()
         plot.set_title('box plot')
         plt.show()
 
     def plot_scatter_matrix(self, data):
         fig, ax = plt.subplots(figsize=(4,4))
-        scatter_matrix(data.dataframe, diagonal="kde", ax=ax)
+        scatter_matrix(data, diagonal="kde", ax=ax)
         plt.show()
 
-    def plot_correlation_statistic(self, data):
-        table_data, table_labels = self._get_correlation_statistic(data)    
+    def plot_correlation_statistic(self, correlation_matrix, p_values_matrix):
+        table_data, table_labels = \
+         self._get_correlation_statistic(correlation_matrix, p_values_matrix)    
         fig, ax =plt.subplots(figsize=(10,10))
         ax.xaxis.set_visible(False) 
         ax.yaxis.set_visible(False)
         table = ax.table(cellText=table_data,colLabels=table_labels,
-        loc="center")
-        #ax.set_title("Correlation statistic")
+        loc="center", cellLoc='center')
         table.set_fontsize(14)
         table.scale(2, 2)
         plt.show()
 
-    def _get_correlation_statistic(self, data):
-        correlation_matrix, p_values_matrix = data.correlation_data
+    def profile_data(self, data):
+        import pandas_profiling
+        profile = pandas_profiling.ProfileReport(data)
+        #fix problem between matplotlib and pandas_profiling
+        plt.style.use('default') 
+        return profile
+
+    def _get_correlation_statistic(self, correlation_matrix, p_values_matrix):
         c_m_values = correlation_matrix.values
         p_v_values = p_values_matrix.values
         shape = correlation_matrix.shape
@@ -96,7 +96,7 @@ class DataAnalyzer:
             certainty = "Weak"
         elif p_value > 0.1:
              certainty = "No"
-        return "{1} ({0})."\
+        return "{0} ({1})"\
         .format(certainty, round(p_value,3))
 
     @staticmethod
@@ -114,7 +114,7 @@ class DataAnalyzer:
         elif correlation_coef < 0.2:
             power = "Very Low"
 
-        return "{0} ({1}).".format(round(correlation_coef,3), power)
+        return "{0} ({1})".format(power,round(correlation_coef,3))
 
 
 
