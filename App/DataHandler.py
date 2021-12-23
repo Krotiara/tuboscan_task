@@ -3,46 +3,47 @@ from scipy.stats import pearsonr
 import pandas as pd
 from scipy import  stats
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 
 
 
 class DataHandler:
 
-    def __init__(self, dataframe, output_split_index):
+    def __init__(self, dataframe, target_columns):
         self.dataframe = dataframe
         self.processed_missing_rows_count = 0
         self.removed_duplicates_count = 0
-        self.output_split_index = output_split_index   
+        self.delete_outliers_count = 0
+        self.target_columns = target_columns
         self.input_scaler = MinMaxScaler(feature_range=(0,1))
         self.output_scaler = MinMaxScaler(feature_range=(0,1))
 
     @property
     def pre_processed_statistic(self):
         return "Processed missing rows count: {0},\
-        \nRemoved duplicates count: {1}." \
+        \nRemoved duplicates count: {1}.,\n" \
+        "Removed outliers count: {2}"\
         .format(self.processed_missing_rows_count,
-        self.removed_duplicates_count)
+        self.removed_duplicates_count, self.delete_outliers_count)
     
-    @property
-    def training_sets(self):
-        """
-        Преобразовать датасет в набор тренируемых и контрольных значений в
-        соответсвии с постановкой задания.
-        :param dataframe: pandas dataframe
-        :return: train_x and train_y sets
-        """
-        float_data = self.dataframe.to_numpy()
-        x, y = np.hsplit(float_data, [self.output_split_index])
-        return x, y
+    def split_data_into_train_and_testing_sets(self):
+        x_data = self.dataframe.drop(columns=self.target_columns)
+        y_data = pd.DataFrame(self.dataframe[self.target_columns])
+        X, X_test, Y, Y_test = train_test_split(x_data,y_data,test_size=0.3,
+                                                random_state=42)
+        return X, X_test, Y, Y_test
 
     @property
     def correlation_data(self):
+        return self.get_correlation_data(self.dataframe)
+
+    def get_correlation_data(self, dataframe):
         """
         Получить матрицы коэффициентов корреляции и уровней значимости.
         :return: матрицы коэффициентов корреляции и уровней значимости.
         """
-        values = self.dataframe.values.T
-        columns_len = len(self.dataframe.columns)
+        values = dataframe.values.T
+        columns_len = len(dataframe.columns)
         correlation_matrix = np.empty((columns_len,columns_len), dtype=float)
         p_values_matrix = np.empty((columns_len,columns_len), dtype=float)
         for i, paramData1 in enumerate(values):
@@ -56,34 +57,30 @@ class DataHandler:
                 p_values_matrix[j,i] = corr[1]
         df_corr_matrix = pd.DataFrame(
             data = correlation_matrix,
-            columns=self.dataframe.columns,
-            index=self.dataframe.columns)
+            columns=dataframe.columns,
+            index=dataframe.columns)
         df_p_vals = pd.DataFrame(
             data = p_values_matrix, 
-            columns=self.dataframe.columns, 
-            index=self.dataframe.columns)
+            columns=dataframe.columns, 
+            index=dataframe.columns)
         return df_corr_matrix, df_p_vals
-
-
-       # return self.dataframe.corr(method='pearson')
 
     @property
     def kendall_correlation_matrix(self):
         return self.dataframe.corr(method='kendall')
 
-    
     def preprocess_data(self):
         """
         Предварительно обработать датасет.
         """
         self.missing_rows_count = self._process_missing_data_by_delete()
-        #dataframe = self._remove_outliers_iqr(dataframe)
+        #self.dataframe, self.delete_outliers_count = self._remove_outliers_iqr()
         self.duplicates_count = self._remove_duplicates()
         self.dataframe = self._normalize_dataframe() 
 
-    
     def _normalize_dataframe(self):
-        x,y = self.training_sets
+        x = self.dataframe.drop(columns=self.target_columns)
+        y = pd.DataFrame(self.dataframe[self.target_columns])
         normalized_x = self.input_scaler.fit_transform(x)
         normalized_y = self.output_scaler.fit_transform(y)
         dataframe = pd.DataFrame(np.column_stack([normalized_x, normalized_y]),
@@ -91,7 +88,6 @@ class DataHandler:
         index=self.dataframe.index) 
         return dataframe
        
-    
     def normalize_input(self,data):
         return self.input_scaler.transform(data)
     
@@ -132,12 +128,15 @@ class DataHandler:
         Q1 = self.dataframe.quantile(0.25)
         Q3 = self.dataframe.quantile(0.75)
         IQR = Q3-Q1
-        lower_range = Q1 - (1.5 * IQR)
-        upper_range = Q3 + (1.5 * IQR)
+        # 1.5 ~ inner fence, 3 ~ outer fence ~ extreme outlier
+        lower_range = Q1 - (3 * IQR) 
+        upper_range = Q3 + (3 * IQR)
         mask = ((self.dataframe < lower_range) |
          (self.dataframe > upper_range)).any(axis=1)
         dataframe_without_outliers = self.dataframe[~mask]
-        return dataframe_without_outliers
+        delete_outliers_count = \
+        self.dataframe.shape[0] - dataframe_without_outliers.shape[0]
+        return dataframe_without_outliers, delete_outliers_count
 
     
 

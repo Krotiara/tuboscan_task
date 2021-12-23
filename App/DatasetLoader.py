@@ -12,7 +12,7 @@ class DatasetLoader:
         float_dataframe = dataframe.astype(float)
         return float_dataframe
 
-    @staticmethod
+    
     def random_vary_input_data(self, input_data, vary_limit: int):
         """Случайно проварьировать входные данные input_data в пределах
         vary_limit процентов от их значений. Функция возвращает
@@ -23,6 +23,7 @@ class DatasetLoader:
         random_vary = lambda x: self._random_vary_value(x, vary_limit)
         varied_data = random_vary(input_data)
         return varied_data
+
 
     def _random_vary_value(self, value, vary_limit):
         percent_value = value / 100 * vary_limit
